@@ -1,0 +1,13 @@
+Olá, {{ doador.nome_completo }}!
+
+O hemocentro {{ necessidade.hemocentro.nome }}, localizado em {{ necessidade.hemocentro.endereco_completo }}, está com urgência de doadores do tipo sanguíneo {{ necessidade.tipo_sanguineo }}, compatível com o seu tipo.
+
+Nível de urgência: {{ necessidade.get_nivel_urgencia_display }}
+{% if necessidade.observacoes %}Observações: {{ necessidade.observacoes }}{% endif %}
+
+Horário de funcionamento: {{ necessidade.hemocentro.horario_funcionamento }}
+Telefone: {{ necessidade.hemocentro.telefone }}
+
+Se puder ajudar, procure o hemocentro o quanto antes. Sua doação pode salvar vidas.
+
+Caso não queira mais receber esses avisos, acesse seu painel no HemoHub e desative as notificações.

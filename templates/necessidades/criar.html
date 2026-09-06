@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block titulo %}Registrar necessidade - HemoHub{% endblock %}
+
+{% block conteudo %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body p-4">
+                <div class="titulo-com-icone mb-3">
+                    <span class="icone-secao"><i class="bi bi-exclamation-diamond"></i></span>
+                    <h1 class="h4 mb-0">Registrar necessidade de sangue</h1>
+                </div>
+                <p class="small text-muted">Necessidades com urgência <strong>Alta</strong> ou <strong>Crítica</strong> disparam notificação automática por e-mail para doadores compatíveis dentro de 10 km.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ formulario.tipo_sanguineo.label }}</label>
+                        {{ formulario.tipo_sanguineo }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ formulario.nivel_urgencia.label }}</label>
+                        {{ formulario.nivel_urgencia }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ formulario.quantidade_bolsas.label }}</label>
+                        {{ formulario.quantidade_bolsas }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ formulario.observacoes.label }}</label>
+                        {{ formulario.observacoes }}
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100"><i class="bi bi-send"></i> Registrar necessidade</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

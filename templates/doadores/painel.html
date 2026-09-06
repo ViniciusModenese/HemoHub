@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block titulo %}Painel do doador - HemoHub{% endblock %}
+
+{% block conteudo %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="titulo-com-icone">
+        <span class="icone-secao"><i class="bi bi-droplet-half"></i></span>
+        <h1 class="h4 mb-0">Olá, {{ doador.nome_completo }}</h1>
+    </div>
+    <a href="{% url 'doadores:editar' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i> Editar perfil</a>
+</div>
+
+<div class="card card-marcada mb-4">
+    <div class="card-body">
+        <h2 class="h6 text-uppercase text-muted"><i class="bi bi-clipboard2-pulse"></i> Situação de doação</h2>
+        {% if apto %}
+            <p class="text-success mb-1"><i class="bi bi-check-circle-fill"></i> Você está apto a doar sangue hoje.</p>
+        {% else %}
+            <p class="text-danger mb-1"><i class="bi bi-x-circle-fill"></i> No momento você não está apto a doar. Motivos:</p>
+            <ul class="small">
+                {% for motivo in motivos %}
+                <li>{{ motivo }}</li>
+                {% endfor %}
+            </ul>
+            <p class="mb-0 small"><i class="bi bi-calendar-event"></i> Próxima data prevista para poder doar: <strong>{{ proxima_data_apta }}</strong></p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h2 class="h6 text-uppercase text-muted"><i class="bi bi-person-vcard"></i> Meus dados</h2>
+        <p class="mb-1"><i class="bi bi-droplet text-danger"></i> Tipo sanguíneo: <strong>{{ doador.tipo_sanguineo }}</strong></p>
+        <p class="mb-1"><i class="bi bi-geo-alt text-danger"></i> Endereço: {{ doador.endereco_completo }}</p>
+        <p class="mb-0 small text-muted"><i class="bi bi-bell"></i> Você recebe notificações automáticas de urgência compatível com o seu tipo sanguíneo.</p>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h6 text-uppercase text-muted mb-0"><i class="bi bi-calendar2-check"></i> Meus Agendamentos</h2>
+            <a href="{% url 'paginas:inicio' %}" class="btn btn-outline-danger btn-sm"><i class="bi bi-plus-lg"></i> Agendar nova doação</a>
+        </div>
+        {% if agendamentos %}
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Data e Horário</th>
+                        <th>Hemocentro</th>
+                        <th>Endereço</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ag in agendamentos %}
+                    <tr>
+                        <td>
+                            <strong>{{ ag.data|date:"d/m/Y" }}</strong> às {{ ag.horario }}
+                        </td>
+                        <td><strong>{{ ag.hemocentro.nome }}</strong></td>
+                        <td class="small text-muted">{{ ag.hemocentro.endereco_completo }}</td>
+                        <td>
+                            {% if ag.status == 'confirmado' %}
+                                <span class="badge bg-success"><i class="bi bi-calendar-check"></i> Confirmado</span>
+                            {% elif ag.status == 'concluido' %}
+                                <span class="badge bg-primary"><i class="bi bi-check2-all"></i> Doação Concluída</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Cancelado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if ag.status == 'confirmado' %}
+                            <form method="post" action="{% url 'doadores:cancelar_agendamento' ag.pk %}" onsubmit="return confirm('Deseja realmente cancelar este agendamento?');" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Cancelar</button>
+                            </form>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted mb-0">Você ainda não possui agendamentos. Acesse o mapa para escolher um hemocentro e agendar sua doação!</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h2 class="h6 text-uppercase text-muted"><i class="bi bi-clock-history"></i> Histórico de doações</h2>
+        <p class="small text-muted">Suas doações são registradas pelo hemocentro no momento do atendimento.</p>
+        {% if historico %}
+        <ul class="list-group list-group-flush">
+            {% for item in historico %}
+            <li class="list-group-item d-flex justify-content-between">
+                <span><i class="bi bi-calendar3"></i> {{ item.data_doacao }}</span>
+                <span class="text-muted">{{ item.local|default:'-' }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted mb-0">Nenhuma doação registrada ainda.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

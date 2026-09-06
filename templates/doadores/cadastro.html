@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block titulo %}Cadastro de doador - HemoHub{% endblock %}
+
+{% block conteudo %}
+<div class="row justify-content-center pagina-autenticacao mx-0">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <div class="titulo-com-icone mb-4">
+                    <span class="icone-secao"><i class="bi bi-droplet-half"></i></span>
+                    <h1 class="h4 mb-0">Cadastro de doador</h1>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    {% if formulario.non_field_errors %}
+                        <div class="alert alert-danger">{{ formulario.non_field_errors }}</div>
+                    {% endif %}
+
+                    <h2 class="h6 text-danger text-uppercase"><i class="bi bi-key"></i> Acesso</h2>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ formulario.username.label }}</label>
+                            {{ formulario.username }}
+                            {{ formulario.username.errors }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ formulario.email.label }}</label>
+                            {{ formulario.email }}
+                            {{ formulario.email.errors }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ formulario.password1.label }}</label>
+                            {{ formulario.password1 }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ formulario.password2.label }}</label>
+                            {{ formulario.password2 }}
+                        </div>
+                    </div>
+
+                    <h2 class="h6 text-danger text-uppercase mt-3"><i class="bi bi-person"></i> Dados pessoais</h2>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">{{ formulario.nome_completo.label }}</label>
+                            {{ formulario.nome_completo }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ formulario.cpf.label }}</label>
+                            {{ formulario.cpf }}
+                            {{ formulario.cpf.errors }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">{{ formulario.data_nascimento.label }}</label>
+                            {{ formulario.data_nascimento }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">{{ formulario.sexo.label }}</label>
+                            {{ formulario.sexo }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">{{ formulario.peso.label }}</label>
+                            {{ formulario.peso }}
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label">{{ formulario.tipo_sanguineo.label }}</label>
+                            {{ formulario.tipo_sanguineo }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ formulario.telefone.label }}</label>
+                            {{ formulario.telefone }}
+                        </div>
+                    </div>
+
+                    <h2 class="h6 text-danger text-uppercase mt-3"><i class="bi bi-heart-pulse"></i> Gestação / pós-parto (se aplicável)</h2>
+                    <div class="row">
+                        <div class="col-md-4 mb-3 form-check ms-1">
+                            {{ formulario.esta_gestante }}
+                            <label class="form-check-label">{{ formulario.esta_gestante.label }}</label>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ formulario.data_ultimo_parto.label }}</label>
+                            {{ formulario.data_ultimo_parto }}
+                        </div>
+                        <div class="col-md-4 mb-3 form-check ms-1">
+                            {{ formulario.parto_cesarea }}
+                            <label class="form-check-label">{{ formulario.parto_cesarea.label }}</label>
+                        </div>
+                    </div>
+
+                    <h2 class="h6 text-danger text-uppercase mt-3"><i class="bi bi-geo-alt"></i> Endereço</h2>
+                    <p class="small text-muted">Usamos seu endereço apenas para calcular a distância até hemocentros com urgência.</p>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">{{ formulario.logradouro.label }}</label>
+                            {{ formulario.logradouro }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ formulario.numero.label }}</label>
+                            {{ formulario.numero }}
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            <label class="form-label">{{ formulario.bairro.label }}</label>
+                            {{ formulario.bairro }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ formulario.cidade.label }}</label>
+                            {{ formulario.cidade }}
+                        </div>
+                        <div class="col-md-1 mb-3">
+                            <label class="form-label">{{ formulario.estado.label }}</label>
+                            {{ formulario.estado }}
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">{{ formulario.cep.label }}</label>
+                            {{ formulario.cep }}
+                        </div>
+                    </div>
+
+                    <p class="small text-muted"><i class="bi bi-bell"></i> Você receberá notificações automáticas quando um hemocentro próximo tiver urgência pelo seu tipo sanguíneo.</p>
+
+                    <button type="submit" class="btn btn-danger w-100"><i class="bi bi-check2-circle"></i> Cadastrar doador</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

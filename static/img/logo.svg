@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 56" fill="none">
+  <defs>
+    <linearGradient id="hh-gota-degrade" x1="8" y1="4" x2="40" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E13A4B"/>
+      <stop offset="1" stop-color="#A50D25"/>
+    </linearGradient>
+  </defs>
+  <path d="M24 3.5C24 3.5 7.5 24.8 7.5 36.5C7.5 46.1650 14.8873 53 24 53C33.1127 53 40.5 46.1650 40.5 36.5C40.5 24.8 24 3.5 24 3.5Z" fill="url(#hh-gota-degrade)"/>
+  <path d="M12.5 34.5H17.5L20.5 25.5L25 43.5L28 31.5L30.5 36.5H35.5" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

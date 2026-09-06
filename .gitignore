@@ -1,0 +1,40 @@
+# Ambientes Virtuais
+venv/
+.venv/
+env/
+ENV/
+
+# Python & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Banco de dados local
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+
+# Arquivos de ambiente e segredos
+.env
+.env.local
+.env.*.local
+
+# Mídia e uploads de usuários
+media/*
+!media/.gitkeep
+
+# IDEs e Ferramentas
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+

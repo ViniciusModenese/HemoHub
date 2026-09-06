@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block titulo %}Entrar no HemoHub{% endblock %}
+
+{% block conteudo %}
+<div class="login-page-container">
+    <div class="card-login">
+        
+        <div class="card-login__header">
+            <div class="card-login__icone-gota">
+                <i class="bi bi-droplet-fill"></i>
+            </div>
+            <h1 class="card-login__titulo">Entrar no HemoHub</h1>
+            <p class="card-login__subtitulo">Acesse sua conta para continuar</p>
+        </div>
+
+        <div class="card-login__body">
+            <div class="login-toggle-wrapper" role="tablist">
+                <button type="button" class="login-toggle-btn {% if form.tipo_perfil.value != 'hemocentro' %}active{% endif %}" id="btnPerfilDoador">
+                    Sou Doador
+                </button>
+                <button type="button" class="login-toggle-btn {% if form.tipo_perfil.value == 'hemocentro' %}active{% endif %}" id="btnPerfilHemocentro">
+                    Sou Hemocentro
+                </button>
+            </div>
+
+            <form method="post" id="formLogin">
+                {% csrf_token %}
+                <input type="hidden" name="tipo_perfil" id="inputTipoPerfil" value="{{ form.tipo_perfil.value|default:'doador' }}">
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger py-2 px-3 mb-3 small" style="border-radius: 12px;">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label class="login-label" for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-2">
+                    <label class="login-label" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+                    {{ form.password }}
+                    {% if form.password.errors %}
+                        <div class="text-danger small mt-1">{{ form.password.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="login-esqueci-senha">
+                    <a href="javascript:void(0)" onclick="alert('Recuperação de senha: Para testes, utilize doador1 / teste123 ou hemocentro1 / teste123');">Esqueci minha senha</a>
+                </div>
+
+                <button type="submit" class="btn-login-submit">
+                    Entrar
+                </button>
+            </form>
+
+            <div class="login-cadastre-se">
+                Não tem conta? <a href="{% url 'doadores:cadastro' %}" id="linkCadastroDinamico">Cadastre-se</a>
+            </div>
+        </div>
+    </div>
+
+    <p class="login-lgpd-texto">
+        Seus dados são protegidos pela LGPD. Não compartilhamos informações médicas.
+    </p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btnDoador = document.getElementById('btnPerfilDoador');
+    const btnHemocentro = document.getElementById('btnPerfilHemocentro');
+    const linkCadastro = document.getElementById('linkCadastroDinamico');
+    const inputPerfil = document.getElementById('inputTipoPerfil');
+
+    const urlDoador = "{% url 'doadores:cadastro' %}";
+    const urlHemocentro = "{% url 'hemocentros:cadastro' %}";
+
+    function ativarPerfil(perfil) {
+        if (perfil === 'hemocentro') {
+            btnHemocentro.classList.add('active');
+            btnDoador.classList.remove('active');
+            if (inputPerfil) inputPerfil.value = 'hemocentro';
+            if (linkCadastro) linkCadastro.href = urlHemocentro;
+        } else {
+            btnDoador.classList.add('active');
+            btnHemocentro.classList.remove('active');
+            if (inputPerfil) inputPerfil.value = 'doador';
+            if (linkCadastro) linkCadastro.href = urlDoador;
+        }
+    }
+
+    btnDoador.addEventListener('click', function() {
+        ativarPerfil('doador');
+    });
+
+    btnHemocentro.addEventListener('click', function() {
+        ativarPerfil('hemocentro');
+    });
+
+    if (inputPerfil && inputPerfil.value === 'hemocentro') {
+        ativarPerfil('hemocentro');
+    } else {
+        ativarPerfil('doador');
+    }
+});
+</script>
+{% endblock %}
+

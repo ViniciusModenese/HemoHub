@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block titulo %}Painel do hemocentro - HemoHub{% endblock %}
+
+{% block conteudo %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="titulo-com-icone">
+        <span class="icone-secao"><i class="bi bi-hospital"></i></span>
+        <h1 class="h4 mb-0">Painel de {{ hemocentro.nome }}</h1>
+    </div>
+    <a href="{% url 'hemocentros:editar' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i> Editar perfil</a>
+</div>
+
+<div class="card card-marcada mb-4">
+    <div class="card-body">
+        <h2 class="h6 text-uppercase text-muted"><i class="bi bi-info-circle"></i> Dados cadastrais</h2>
+        <p class="mb-1"><i class="bi bi-geo-alt text-danger"></i> {{ hemocentro.endereco_completo }}</p>
+        <p class="mb-1"><i class="bi bi-telephone text-danger"></i> {{ hemocentro.telefone|default:'não informado' }}</p>
+        <p class="mb-1"><i class="bi bi-clock text-danger"></i> {{ hemocentro.horario_funcionamento }}</p>
+        {% if hemocentro.latitude is None %}
+            <p class="text-warning small mb-0"><i class="bi bi-exclamation-triangle"></i> Não foi possível localizar este endereço no mapa automaticamente. Verifique se o endereço está correto.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="titulo-com-icone">
+        <span class="icone-secao"><i class="bi bi-calendar2-week"></i></span>
+        <h2 class="h5 mb-0">Agenda de Doações Recebidas</h2>
+    </div>
+</div>
+
+{% if agendamentos %}
+<div class="card mb-4">
+    <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Data e Horário</th>
+                    <th>Doador</th>
+                    <th>Tipo Sanguíneo</th>
+                    <th>Telefone</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ag in agendamentos %}
+                <tr>
+                    <td><strong>{{ ag.data|date:"d/m/Y" }}</strong> às {{ ag.horario }}</td>
+                    <td><strong>{{ ag.doador.nome_completo }}</strong></td>
+                    <td><span class="badge bg-danger">{{ ag.doador.tipo_sanguineo }}</span></td>
+                    <td>{{ ag.doador.telefone|default:'-' }}</td>
+                    <td>
+                        {% if ag.status == 'confirmado' %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Agendado</span>
+                        {% elif ag.status == 'concluido' %}
+                            <span class="badge bg-success"><i class="bi bi-check2-all"></i> Doação Concluída</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Cancelado</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ag.status == 'confirmado' %}
+                        <div class="d-flex gap-1">
+                            <form method="post" action="{% url 'hemocentros:atualizar_agendamento' ag.pk %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="concluir">
+                                <button type="submit" class="btn btn-sm btn-success" title="Confirmar comparecimento e registrar doação">
+                                    <i class="bi bi-check-lg"></i> Concluir
+                                </button>
+                            </form>
+                            <form method="post" action="{% url 'hemocentros:atualizar_agendamento' ag.pk %}" onsubmit="return confirm('Deseja realmente cancelar este agendamento?');" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="cancelar">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancelar agendamento">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="card mb-4">
+    <div class="card-body text-muted small">
+        <i class="bi bi-calendar-x"></i> Nenhum agendamento de doação pendente ou realizado até o momento.
+    </div>
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="titulo-com-icone">
+        <span class="icone-secao"><i class="bi bi-droplet"></i></span>
+        <h2 class="h5 mb-0">Necessidades de sangue</h2>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'hemocentros:registrar_doacao' %}" class="btn btn-outline-danger btn-sm"><i class="bi bi-clipboard2-check"></i> Registrar doação</a>
+        <a href="{% url 'necessidades:criar' %}" class="btn btn-danger btn-sm"><i class="bi bi-plus-lg"></i> Registrar necessidade</a>
+    </div>
+</div>
+
+{% if necessidades %}
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-striped align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Tipo</th>
+                    <th>Urgência</th>
+                    <th>Bolsas</th>
+                    <th>Status</th>
+                    <th>Notificação</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for necessidade in necessidades %}
+                <tr>
+                    <td>{{ necessidade.tipo_sanguineo }}</td>
+                    <td><span class="badge badge-urgencia-{{ necessidade.nivel_urgencia }}">{{ necessidade.get_nivel_urgencia_display }}</span></td>
+                    <td>{{ necessidade.quantidade_bolsas|default:'-' }}</td>
+                    <td>{% if necessidade.ativa %}<span class="badge bg-success"><i class="bi bi-check-circle"></i> Ativa</span>{% else %}<span class="badge bg-secondary">Encerrada</span>{% endif %}</td>
+                    <td>{% if necessidade.notificacao_enviada %}<i class="bi bi-envelope-check text-success"></i> Enviada{% else %}-{% endif %}</td>
+                    <td>
+                        {% if necessidade.ativa %}
+                        <form method="post" action="{% url 'necessidades:encerrar' necessidade.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">Encerrar</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<p class="text-muted">Nenhuma necessidade registrada ainda.</p>
+{% endif %}
+{% endblock %}

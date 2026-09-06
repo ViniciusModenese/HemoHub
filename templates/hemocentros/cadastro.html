@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block titulo %}Cadastro de hemocentro - HemoHub{% endblock %}
+
+{% block conteudo %}
+<div class="row justify-content-center pagina-autenticacao mx-0">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <div class="titulo-com-icone mb-4">
+                    <span class="icone-secao"><i class="bi bi-hospital"></i></span>
+                    <h1 class="h4 mb-0">Cadastro de hemocentro</h1>
+                </div>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {% if formulario.non_field_errors %}
+                        <div class="alert alert-danger">{{ formulario.non_field_errors }}</div>
+                    {% endif %}
+
+                    <h2 class="h6 text-danger text-uppercase"><i class="bi bi-key"></i> Acesso</h2>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ formulario.username.label }}</label>
+                            {{ formulario.username }}
+                            {{ formulario.username.errors }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ formulario.email.label }}</label>
+                            {{ formulario.email }}
+                            {{ formulario.email.errors }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ formulario.password1.label }}</label>
+                            {{ formulario.password1 }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ formulario.password2.label }}</label>
+                            {{ formulario.password2 }}
+                        </div>
+                    </div>
+
+                    <h2 class="h6 text-danger text-uppercase mt-3"><i class="bi bi-building"></i> Dados do hemocentro</h2>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">{{ formulario.nome.label }}</label>
+                            {{ formulario.nome }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ formulario.cnpj.label }}</label>
+                            {{ formulario.cnpj }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ formulario.telefone.label }}</label>
+                            {{ formulario.telefone }}
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">{{ formulario.descricao.label }}</label>
+                            {{ formulario.descricao }}
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label">{{ formulario.horario_funcionamento.label }}</label>
+                            {{ formulario.horario_funcionamento }}
+                        </div>
+                    </div>
+
+                    <h2 class="h6 text-danger text-uppercase mt-3"><i class="bi bi-geo-alt"></i> Endereço</h2>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">{{ formulario.logradouro.label }}</label>
+                            {{ formulario.logradouro }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ formulario.numero.label }}</label>
+                            {{ formulario.numero }}
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            <label class="form-label">{{ formulario.bairro.label }}</label>
+                            {{ formulario.bairro }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">{{ formulario.cidade.label }}</label>
+                            {{ formulario.cidade }}
+                        </div>
+                        <div class="col-md-1 mb-3">
+                            <label class="form-label">{{ formulario.estado.label }}</label>
+                            {{ formulario.estado }}
+                        </div>
+                        <div class="col-md-2 mb-3">
+                            <label class="form-label">{{ formulario.cep.label }}</label>
+                            {{ formulario.cep }}
+                        </div>
+                    </div>
+
+                    <h2 class="h6 text-danger text-uppercase mt-3"><i class="bi bi-images"></i> Fotos</h2>
+                    <div class="mb-3">
+                        <input type="file" name="fotos" multiple accept="image/*" class="form-control">
+                    </div>
+
+                    <button type="submit" class="btn btn-danger w-100"><i class="bi bi-check2-circle"></i> Cadastrar hemocentro</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
