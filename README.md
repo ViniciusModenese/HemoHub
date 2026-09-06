@@ -7,7 +7,7 @@
 
 ## 🎓 Contexto Acadêmico
 
-Este projeto foi desenvolvido como requisito para a disciplina de **Projeto Integrador II (PI II)** dos cursos de tecnologia da **UNIVESP (Universidade Virtual do Estado de São Paulo)**.
+Este projeto foi desenvolvido como requisito para a disciplina de **Projeto Integrador II (PI II)** do curso de Tecnologia da Informação da **UNIVESP (Universidade Virtual do Estado de São Paulo)**.
 
 O objetivo do Projeto Integrador é aplicar conhecimentos práticos de engenharia de software, bancos de dados, desenvolvimento web e design centrado no usuário para resolver um problema real da sociedade. O **HemoHub** foca diretamente no fortalecimento da rede pública e privada de captação de sangue no Estado de São Paulo e no Brasil.
 
@@ -61,45 +61,53 @@ O **HemoHub** é uma ponte tecnológica direta entre o hemocentro e o doador vol
 - Git instalado
 
 ### 1. Clonar o Repositório
-\\ash
+```bash
 git clone https://github.com/SEU_USUARIO/HemoHub.git
 cd HemoHub
-\
+```
+
 ### 2. Criar e Ativar o Ambiente Virtual
 **No Windows:**
-\\ash
+```bash
 python -m venv venv
 .\venv\Scripts\activate
-\
+```
+
 **No Linux / macOS:**
-\\ash
+```bash
 python3 -m venv venv
 source venv/bin/activate
-\
+```
+
 ### 3. Instalar as Dependências
-\\ash
+```bash
 pip install -r requirements.txt
-\
+```
+
 ### 4. Configurar as Variáveis de Ambiente
-\\ash
+```bash
 cp .env.example .env
-\*(No Windows PowerShell: Copy-Item .env.example .env)*
+```
+*(No Windows PowerShell: `Copy-Item .env.example .env`)*
 
 ### 5. Executar as Migrações
-\\ash
+```bash
 python manage.py migrate
-\
+```
+
 ### 6. Popular Dados de Demonstração
 O projeto inclui comandos com dados de hemocentros reais do Estado de SP e geração de doadores para teste:
-\\ash
+```bash
 python manage.py popular_hemocentros
 python manage.py popular_doadores --quantidade 50
-\
+```
+
 ### 7. Iniciar a Aplicação
-\\ash
+```bash
 python manage.py runserver
-\
-Acesse no navegador: **http://127.0.0.1:8000**
+```
+
+Acesse no navegador: **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
 
 ---
 
@@ -107,8 +115,8 @@ Acesse no navegador: **http://127.0.0.1:8000**
 
 | Perfil | Usuário | E-mail | Senha |
 |---|---|---|---|
-| **Doador** | doador1 | doador1@teste.com | 	este123 |
-| **Hemocentro** | hemocentro1 | hemocentro1@teste.com | 	este123 |
+| **Doador** | doador1 | doador1@teste.com | teste123 |
+| **Hemocentro** | hemocentro1 | hemocentro1@teste.com | teste123 |
 
 ---
 
@@ -116,14 +124,15 @@ Acesse no navegador: **http://127.0.0.1:8000**
 
 O sistema conta com 14 testes unitários automatizados cobrindo autenticação, restrição de acesso por perfil, regras de aptidão, agendamento e API do mapa:
 
-\\ash
+```bash
 python manage.py test
-\
+```
+
 ---
 
 ## 📂 Estrutura do Repositório
 
-\\	ext
+```text
 HemoHub/
 ├── doadores/          # Perfil do doador, cálculo de aptidão e agendamentos
 ├── hemocentros/       # Cadastro hospitalar, unidades e dados semente de SP
@@ -139,7 +148,8 @@ HemoHub/
 ├── manage.py          # Utilitário de linha de comando Django
 ├── requirements.txt   # Dependências do projeto travadas
 └── README.md          # Documentação do Projeto Integrador
-\
+```
+
 ---
 
 ## 👥 Autoria e Agradecimentos
