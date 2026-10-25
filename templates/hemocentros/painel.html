@@ -24,10 +24,84 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <div class="titulo-com-icone">
+        <span class="icone-secao"><i class="bi bi-droplet-half"></i></span>
+        <h2 class="h5 mb-0">Estoque de sangue</h2>
+    </div>
+    <a href="{% url 'hemocentros:atualizar_estoque' %}" class="btn btn-outline-danger btn-sm"><i class="bi bi-pencil-square"></i> Atualizar estoque</a>
+</div>
+
+<div class="row g-3 mb-4">
+    {% for item in estoque %}
+    <div class="col-6 col-md-3">
+        <div class="card h-100">
+            <div class="card-body py-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="fs-4 fw-bold">{{ item.tipo }}</span>
+                    {% if item.nivel == 'critico' %}
+                        <span class="badge text-bg-danger">Crítico</span>
+                    {% elif item.nivel == 'baixo' %}
+                        <span class="badge text-bg-warning">Baixo</span>
+                    {% else %}
+                        <span class="badge text-bg-success">Normal</span>
+                    {% endif %}
+                </div>
+                <p class="mb-2 small"><strong>{{ item.quantidade }}</strong> bolsa{{ item.quantidade|pluralize }}</p>
+                <div class="progress" role="progressbar" aria-label="Nível do estoque {{ item.tipo }}" aria-valuenow="{{ item.percentual }}" aria-valuemin="0" aria-valuemax="100" style="height: 8px;">
+                    <div class="progress-bar {% if item.nivel == 'critico' %}bg-danger{% elif item.nivel == 'baixo' %}bg-warning{% else %}bg-success{% endif %}" style="width: {{ item.percentual }}%;"></div>
+                </div>
+                {% if item.atualizado_em %}
+                <p class="text-muted mb-0 mt-2" style="font-size: 0.75rem;">Atualizado em {{ item.atualizado_em|date:"d/m H:i" }}</p>
+                {% endif %}
+                {% if item.nivel == 'critico' %}
+                <form method="post" action="{% url 'hemocentros:emitir_alerta_estoque' %}" class="mt-2" onsubmit="return confirm('Emitir alerta de urgência para {{ item.tipo }}? Os doadores compatíveis em até {{ raio_km }} km serão notificados.');">
+                    {% csrf_token %}
+                    <input type="hidden" name="tipo" value="{{ item.tipo }}">
+                    <button type="submit" class="btn btn-danger btn-sm w-100"><i class="bi bi-megaphone"></i> Emitir alerta</button>
+                </form>
+                <p class="text-muted mb-0 mt-1" style="font-size: 0.75rem;">
+                    {% if item.ultimo_alerta %}Último alerta: {{ item.ultimo_alerta|date:"d/m/Y H:i" }}{% else %}Nenhum alerta emitido{% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="titulo-com-icone">
         <span class="icone-secao"><i class="bi bi-calendar2-week"></i></span>
         <h2 class="h5 mb-0">Agenda de Doações Recebidas</h2>
     </div>
 </div>
+
+<form method="get" class="card card-body mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small text-muted text-uppercase mb-1" for="filtro-status">Status</label>
+            <select id="filtro-status" name="status" class="form-select form-select-sm">
+                <option value="">Todos</option>
+                {% for valor, rotulo in opcoes_status %}
+                <option value="{{ valor }}" {% if filtros.status == valor %}selected{% endif %}>{% if valor == 'confirmado' %}Agendado{% else %}{{ rotulo }}{% endif %}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small text-muted text-uppercase mb-1" for="filtro-de">De</label>
+            <input type="date" id="filtro-de" name="de" value="{{ filtros.de }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small text-muted text-uppercase mb-1" for="filtro-ate">Até</label>
+            <input type="date" id="filtro-ate" name="ate" value="{{ filtros.ate }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn btn-danger btn-sm"><i class="bi bi-funnel"></i> Filtrar</button>
+            {% if filtrado %}
+            <a href="{% url 'hemocentros:painel' %}" class="btn btn-outline-secondary btn-sm">Limpar</a>
+            {% endif %}
+        </div>
+    </div>
+</form>
 
 {% if agendamentos %}
 <div class="card mb-4">
@@ -47,7 +121,10 @@
                 {% for ag in agendamentos %}
                 <tr>
                     <td><strong>{{ ag.data|date:"d/m/Y" }}</strong> às {{ ag.horario }}</td>
-                    <td><strong>{{ ag.doador.nome_completo }}</strong></td>
+                    <td>
+                        <strong>{{ ag.doador.nome_completo }}</strong>
+                        {% if ag.doador.idade >= 70 %}<br><span class="badge text-bg-light border" title="Doadores acima de 70 anos passam por avaliação médica no local"><i class="bi bi-heart-pulse"></i> Avaliação médica</span>{% endif %}
+                    </td>
                     <td><span class="badge bg-danger">{{ ag.doador.tipo_sanguineo }}</span></td>
                     <td>{{ ag.doador.telefone|default:'-' }}</td>
                     <td>
@@ -55,6 +132,8 @@
                             <span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> Agendado</span>
                         {% elif ag.status == 'concluido' %}
                             <span class="badge bg-success"><i class="bi bi-check2-all"></i> Doação Concluída</span>
+                        {% elif ag.status == 'ausente' %}
+                            <span class="badge bg-dark"><i class="bi bi-person-x"></i> Ausente</span>
                         {% else %}
                             <span class="badge bg-secondary">Cancelado</span>
                         {% endif %}
@@ -65,13 +144,15 @@
                             <form method="post" action="{% url 'hemocentros:atualizar_agendamento' ag.pk %}" class="d-inline">
                                 {% csrf_token %}
                                 <input type="hidden" name="acao" value="concluir">
-                                <button type="submit" class="btn btn-sm btn-success" title="Confirmar comparecimento e registrar doação">
+                                <input type="hidden" name="voltar" value="{{ consulta_atual }}">
+                                <button type="submit" class="btn btn-sm btn-success" {% if ag.data > hoje %}disabled title="Só pode ser concluído a partir de {{ ag.data|date:'d/m/Y' }}"{% else %}title="Confirmar comparecimento e registrar doação"{% endif %}>
                                     <i class="bi bi-check-lg"></i> Concluir
                                 </button>
                             </form>
                             <form method="post" action="{% url 'hemocentros:atualizar_agendamento' ag.pk %}" onsubmit="return confirm('Deseja realmente cancelar este agendamento?');" class="d-inline">
                                 {% csrf_token %}
                                 <input type="hidden" name="acao" value="cancelar">
+                                <input type="hidden" name="voltar" value="{{ consulta_atual }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Cancelar agendamento">
                                     <i class="bi bi-x-lg"></i>
                                 </button>
@@ -87,10 +168,24 @@
         </table>
     </div>
 </div>
+{% if agendamentos.paginator.num_pages > 1 %}
+<nav class="d-flex justify-content-between align-items-center mb-4" aria-label="Paginação da agenda">
+    <span class="text-muted small">Página {{ agendamentos.number }} de {{ agendamentos.paginator.num_pages }} ({{ agendamentos.paginator.count }} agendamentos)</span>
+    <div class="d-flex gap-2">
+        {% if agendamentos.has_previous %}
+        <a class="btn btn-outline-secondary btn-sm" href="?{{ consulta_filtros }}{% if consulta_filtros %}&{% endif %}pagina={{ agendamentos.previous_page_number }}">Anterior</a>
+        {% endif %}
+        {% if agendamentos.has_next %}
+        <a class="btn btn-outline-secondary btn-sm" href="?{{ consulta_filtros }}{% if consulta_filtros %}&{% endif %}pagina={{ agendamentos.next_page_number }}">Próxima</a>
+        {% endif %}
+    </div>
+</nav>
+{% endif %}
 {% else %}
 <div class="card mb-4">
     <div class="card-body text-muted small">
-        <i class="bi bi-calendar-x"></i> Nenhum agendamento de doação pendente ou realizado até o momento.
+        <i class="bi bi-calendar-x"></i>
+        {% if filtrado %}Nenhum agendamento encontrado com esses filtros.{% else %}Nenhum agendamento de doação pendente ou realizado até o momento.{% endif %}
     </div>
 </div>
 {% endif %}

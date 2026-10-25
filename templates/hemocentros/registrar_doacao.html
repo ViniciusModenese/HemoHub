@@ -11,8 +11,15 @@
                     <h1 class="h4 mb-0">Registrar doação</h1>
                 </div>
 
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <span class="text-muted small">Doador sem cadastro, atendido presencialmente?</span>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalCadastroPresencial">
+                        <i class="bi bi-person-plus"></i> Cadastrar doador presencial
+                    </button>
+                </div>
+
                 <form method="get" class="d-flex gap-2 mb-4">
-                    <input type="text" name="q" value="{{ termo_busca }}" class="form-control" placeholder="Buscar doador pelo nome...">
+                    <input type="text" name="q" value="{{ termo_busca }}" class="form-control" placeholder="Buscar pelo nome (mínimo 3 letras) ou CPF...">
                     <button type="submit" class="btn btn-danger"><i class="bi bi-search"></i> Buscar</button>
                 </form>
 
@@ -23,14 +30,14 @@
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span>
                                 <strong>{{ doador.nome_completo }}</strong>
-                                <span class="text-muted small"> - {{ doador.tipo_sanguineo }}</span>
+                                <span class="text-muted small"> - {{ doador.tipo_sanguineo }} - {{ doador.cidade }}/{{ doador.estado }}</span>
                             </span>
                             <a href="?q={{ termo_busca }}&doador={{ doador.pk }}" class="btn btn-outline-danger btn-sm">Selecionar</a>
                         </li>
                         {% endfor %}
                     </ul>
                     {% else %}
-                    <p class="text-muted">Nenhum doador encontrado com esse nome.</p>
+                    <p class="text-muted">Nenhum doador encontrado. Busque pelo nome (mínimo 3 letras) ou pelo CPF completo, ou cadastre o doador presencialmente.</p>
                     {% endif %}
                 {% endif %}
 
@@ -40,40 +47,94 @@
                         <h2 class="h6 text-uppercase text-muted"><i class="bi bi-person-vcard"></i> Doador selecionado</h2>
                         <p class="mb-1"><strong>{{ doador_selecionado.nome_completo }}</strong></p>
                         <p class="mb-1 small"><i class="bi bi-droplet text-danger"></i> Tipo sanguíneo: {{ doador_selecionado.tipo_sanguineo }}</p>
-                        <p class="mb-1 small"><i class="bi bi-geo-alt text-danger"></i> {{ doador_selecionado.endereco_completo }}</p>
-                        {% with apto=doador_selecionado.apto_para_doar %}
-                            {% if not apto.0 %}
-                            <div class="alert alert-warning small mt-2 mb-0">
-                                <i class="bi bi-exclamation-triangle"></i> Atenção, o sistema identificou possíveis restrições para este doador:
-                                <ul class="mb-0">
-                                    {% for motivo in apto.1 %}
-                                    <li>{{ motivo }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            {% endif %}
-                        {% endwith %}
+                        <p class="mb-1 small"><i class="bi bi-geo-alt text-danger"></i> {{ doador_selecionado.cidade }}/{{ doador_selecionado.estado }}</p>
+                        {% if restricoes %}
+                        <div class="alert alert-danger small mt-2 mb-0">
+                            <i class="bi bi-exclamation-octagon"></i> Não é possível confirmar a doação deste doador:
+                            <ul class="mb-0">
+                                {% for motivo in restricoes %}
+                                <li>{{ motivo }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        <p class="text-muted small mt-2 mb-0"><i class="bi bi-heart-pulse"></i> Idade: {{ doador_selecionado.idade }} anos. A avaliação por idade é feita pela triagem do hemocentro.</p>
                     </div>
                 </div>
 
                 <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="doador_id" value="{{ doador_selecionado.pk }}">
+                    {% if formulario.non_field_errors %}
+                        <div class="alert alert-danger">{{ formulario.non_field_errors }}</div>
+                    {% endif %}
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">{{ formulario.data_doacao.label }}</label>
                             {{ formulario.data_doacao }}
+                            {{ formulario.data_doacao.errors }}
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">{{ formulario.local.label }}</label>
                             {{ formulario.local }}
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-danger w-100"><i class="bi bi-check2-circle"></i> Confirmar doação</button>
+                    <button type="submit" class="btn btn-danger w-100" {% if restricoes %}disabled{% endif %}><i class="bi bi-check2-circle"></i> Confirmar doação</button>
                 </form>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalCadastroPresencial" tabindex="-1" aria-labelledby="modalCadastroPresencialLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'hemocentros:cadastrar_doador_presencial' %}" class="d-flex flex-column" style="max-height: calc(100vh - 3.5rem);" autocomplete="off">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <div>
+                        <div class="text-danger fw-semibold small"><i class="bi bi-person-plus"></i> ATENDIMENTO PRESENCIAL</div>
+                        <h2 class="modal-title h5 fw-bold" id="modalCadastroPresencialLabel">Cadastrar doador</h2>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">Preencha com o doador. Se o doador já tem cadastro, feche esta janela e busque por nome ou CPF. Usuário e senha ficam com o doador, que poderá entrar no HemoHub depois. Ao cadastrar, ele já aparece na sua agenda de hoje, pronto para a doação ser confirmada.</p>
+                    {% if formulario_doador.non_field_errors %}
+                        <div class="alert alert-danger">{{ formulario_doador.non_field_errors }}</div>
+                    {% endif %}
+                    <div class="row">
+                        {% for campo in formulario_doador %}
+                        <div class="col-md-6 mb-2">
+                            {% if campo.field.widget.input_type == 'checkbox' %}
+                                <div class="form-check mt-4">
+                                    {{ campo }}
+                                    <label class="form-check-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                                </div>
+                            {% else %}
+                                <label class="form-label small mb-1" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                                {{ campo }}
+                            {% endif %}
+                            {{ campo.errors }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-check2-circle"></i> Cadastrar e continuar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if abrir_modal_cadastro %}
+<script>
+    new bootstrap.Modal(document.getElementById('modalCadastroPresencial')).show();
+</script>
+{% endif %}
 {% endblock %}

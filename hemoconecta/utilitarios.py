@@ -60,3 +60,35 @@ def calcular_distancia_km(latitude1, longitude1, latitude2, longitude2):
     a = math.sin(delta_lat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(delta_lon / 2) ** 2
     c = 2 * math.asin(math.sqrt(a))
     return raio_terra_km * c
+
+
+def _so_digitos(valor):
+    return ''.join(caractere for caractere in (valor or '') if caractere.isdigit())
+
+
+def _digito_verificador(digitos, pesos):
+    soma = sum(int(digito) * peso for digito, peso in zip(digitos, pesos))
+    resto = soma % 11
+    return '0' if resto < 2 else str(11 - resto)
+
+
+def normalizar_cpf(valor):
+    digitos = _so_digitos(valor)
+    if len(digitos) != 11 or digitos == digitos[0] * 11:
+        return None
+    primeiro = _digito_verificador(digitos[:9], range(10, 1, -1))
+    segundo = _digito_verificador(digitos[:10], range(11, 1, -1))
+    if digitos[9:] != primeiro + segundo:
+        return None
+    return f'{digitos[:3]}.{digitos[3:6]}.{digitos[6:9]}-{digitos[9:]}'
+
+
+def normalizar_cnpj(valor):
+    digitos = _so_digitos(valor)
+    if len(digitos) != 14 or digitos == digitos[0] * 14:
+        return None
+    primeiro = _digito_verificador(digitos[:12], [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2])
+    segundo = _digito_verificador(digitos[:13], [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2])
+    if digitos[12:] != primeiro + segundo:
+        return None
+    return f'{digitos[:2]}.{digitos[2:5]}.{digitos[5:8]}/{digitos[8:12]}-{digitos[12:]}'

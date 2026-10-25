@@ -1,8 +1,24 @@
 from django import forms
 
+from hemoconecta.utilitarios import TIPOS_SANGUINEOS, normalizar_cnpj
+
 from .models import Hemocentro
 
 CLASSE_CAMPO = 'form-control'
+
+
+def validar_cnpj_do_formulario(valor, ignorar_pk=None):
+    if not valor:
+        return ''
+    cnpj = normalizar_cnpj(valor)
+    if cnpj is None:
+        raise forms.ValidationError('CNPJ inválido. Confira os números digitados.')
+    outros = Hemocentro.objects.filter(cnpj=cnpj)
+    if ignorar_pk:
+        outros = outros.exclude(pk=ignorar_pk)
+    if outros.exists():
+        raise forms.ValidationError('Este CNPJ já está cadastrado.')
+    return cnpj
 
 
 class FormularioCadastroHemocentro(forms.Form):
@@ -23,6 +39,9 @@ class FormularioCadastroHemocentro(forms.Form):
     cidade = forms.CharField(label='Cidade', max_length=100, widget=forms.TextInput(attrs={'class': CLASSE_CAMPO}))
     estado = forms.ChoiceField(label='Estado', choices=Hemocentro.estado.field.choices, widget=forms.Select(attrs={'class': 'form-select'}))
     cep = forms.CharField(label='CEP', max_length=9, widget=forms.TextInput(attrs={'class': CLASSE_CAMPO}))
+
+    def clean_cnpj(self):
+        return validar_cnpj_do_formulario(self.cleaned_data.get('cnpj'))
 
     def clean_username(self):
         from usuarios.models import Usuario
@@ -67,3 +86,22 @@ class FormularioEditarHemocentro(forms.ModelForm):
             'estado': forms.Select(attrs={'class': 'form-select'}),
             'cep': forms.TextInput(attrs={'class': CLASSE_CAMPO}),
         }
+
+    def clean_cnpj(self):
+        return validar_cnpj_do_formulario(self.cleaned_data.get('cnpj'), ignorar_pk=self.instance.pk)
+
+
+def nome_do_campo_estoque(tipo_sanguineo):
+    return 'tipo_' + tipo_sanguineo.replace('+', 'pos').replace('-', 'neg')
+
+
+class FormularioEstoque(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for tipo, rotulo in TIPOS_SANGUINEOS:
+            self.fields[nome_do_campo_estoque(tipo)] = forms.IntegerField(
+                label=rotulo,
+                min_value=0,
+                max_value=9999,
+                widget=forms.NumberInput(attrs={'class': CLASSE_CAMPO}),
+            )

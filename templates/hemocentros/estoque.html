@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block titulo %}Atualizar estoque - HemoHub{% endblock %}
+
+{% block conteudo %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <div class="titulo-com-icone mb-3">
+                    <span class="icone-secao"><i class="bi bi-droplet-half"></i></span>
+                    <h1 class="h4 mb-0">Atualizar estoque</h1>
+                </div>
+                <p class="text-muted small mb-2">Informe a quantidade de bolsas disponíveis de cada tipo sanguíneo em {{ hemocentro.nome }}.</p>
+                <p class="text-muted small"><i class="bi bi-info-circle"></i> Cada doação concluída soma <strong>1 bolsa</strong> ao tipo do doador automaticamente. Tipos sem quantidade informada contam como zero. Use esta tela para o saldo inicial e para ajustes, como bolsas usadas em transfusões.</p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    {% if formulario.non_field_errors %}
+                        <div class="alert alert-danger">{{ formulario.non_field_errors }}</div>
+                    {% endif %}
+                    <div class="row">
+                        {% for campo in formulario %}
+                        <div class="col-6 col-md-3 mb-3">
+                            <label class="form-label fw-bold" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                            {{ campo }}
+                            {{ campo.errors }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger"><i class="bi bi-check2-circle"></i> Salvar estoque</button>
+                        <a href="{% url 'hemocentros:painel' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

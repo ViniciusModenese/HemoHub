@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
@@ -29,7 +30,10 @@ def criar(request):
             return redirect('hemocentros:painel')
     else:
         formulario = FormularioNecessidade()
-    return render(request, 'necessidades/criar.html', {'formulario': formulario})
+    return render(request, 'necessidades/criar.html', {
+        'formulario': formulario,
+        'raio_km': settings.RAIO_NOTIFICACAO_URGENCIA_KM,
+    })
 
 
 @login_required

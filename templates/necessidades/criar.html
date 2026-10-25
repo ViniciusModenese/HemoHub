@@ -10,7 +10,7 @@
                     <span class="icone-secao"><i class="bi bi-exclamation-diamond"></i></span>
                     <h1 class="h4 mb-0">Registrar necessidade de sangue</h1>
                 </div>
-                <p class="small text-muted">Necessidades com urgência <strong>Alta</strong> ou <strong>Crítica</strong> disparam notificação automática por e-mail para doadores compatíveis dentro de 10 km.</p>
+                <p class="small text-muted">Necessidades com urgência <strong>Alta</strong> ou <strong>Crítica</strong> disparam notificação automática por e-mail para doadores compatíveis dentro de {{ raio_km }} km.</p>
                 <form method="post">
                     {% csrf_token %}
                     <div class="mb-3">
