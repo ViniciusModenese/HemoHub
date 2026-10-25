@@ -1,7 +1,9 @@
 from django.conf import settings
 from django.db import models
+from django.db.models import F
+from django.utils import timezone
 
-from hemoconecta.utilitarios import obter_coordenadas_endereco
+from hemoconecta.utilitarios import TIPOS_SANGUINEOS, obter_coordenadas_endereco
 
 ESTADOS_BRASIL = [
     ('AC', 'AC'), ('AL', 'AL'), ('AP', 'AP'), ('AM', 'AM'), ('BA', 'BA'), ('CE', 'CE'),
@@ -61,6 +63,17 @@ class Hemocentro(models.Model):
     def necessidades_ativas(self):
         return self.necessidades.filter(ativa=True)
 
+    def registrar_entrada_no_estoque(self, tipo_sanguineo, bolsas=1):
+        registro, criado = self.estoque.get_or_create(
+            tipo_sanguineo=tipo_sanguineo,
+            defaults={'quantidade_bolsas': bolsas},
+        )
+        if not criado:
+            self.estoque.filter(pk=registro.pk).update(
+                quantidade_bolsas=F('quantidade_bolsas') + bolsas,
+                atualizado_em=timezone.now(),
+            )
+
 
 class FotoHemocentro(models.Model):
     hemocentro = models.ForeignKey(Hemocentro, on_delete=models.CASCADE, related_name='fotos')
@@ -75,3 +88,42 @@ class FotoHemocentro(models.Model):
 
     def __str__(self):
         return f'Foto de {self.hemocentro.nome}'
+
+
+ESTOQUE_NIVEL_CRITICO = 10
+ESTOQUE_NIVEL_BAIXO = 25
+ESTOQUE_REFERENCIA_BARRA = 60
+
+
+class EstoqueSanguineo(models.Model):
+    hemocentro = models.ForeignKey(Hemocentro, on_delete=models.CASCADE, related_name='estoque')
+    tipo_sanguineo = models.CharField(max_length=3, choices=TIPOS_SANGUINEOS)
+    quantidade_bolsas = models.PositiveIntegerField(default=0)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Estoque de sangue'
+        verbose_name_plural = 'Estoques de sangue'
+        ordering = ['tipo_sanguineo']
+        constraints = [
+            models.UniqueConstraint(fields=['hemocentro', 'tipo_sanguineo'], name='estoque_unico_por_tipo'),
+        ]
+
+    def __str__(self):
+        return f'{self.hemocentro.nome} - {self.tipo_sanguineo}: {self.quantidade_bolsas} bolsas'
+
+    @property
+    def nivel(self):
+        return nivel_do_estoque(self.quantidade_bolsas)
+
+    @property
+    def percentual(self):
+        return min(100, round(self.quantidade_bolsas * 100 / ESTOQUE_REFERENCIA_BARRA))
+
+
+def nivel_do_estoque(quantidade):
+    if quantidade < ESTOQUE_NIVEL_CRITICO:
+        return 'critico'
+    if quantidade < ESTOQUE_NIVEL_BAIXO:
+        return 'baixo'
+    return 'normal'

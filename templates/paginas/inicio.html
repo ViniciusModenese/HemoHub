@@ -103,8 +103,9 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body p-4" id="modalAgendamentoBody">
-                
+
             </div>
+            <div id="requisitosConteudo" hidden>{% include 'doadores/_requisitos_doacao.html' %}</div>
         </div>
     </div>
 </div>
@@ -178,6 +179,7 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         maxZoom: 19,
+        referrerPolicy: 'strict-origin-when-cross-origin',
     }).addTo(mapa);
 
     function criarIconeMarcador(statusDemanda) {
@@ -357,6 +359,21 @@
             return;
         }
 
+        if (data.agendamento_ativo) {
+            const ativo = data.agendamento_ativo;
+            modalBody.innerHTML = `
+                <div class="alert alert-info mb-0 py-3">
+                    <h6 class="fw-bold mb-1"><i class="bi bi-info-circle-fill"></i> Você já tem um agendamento confirmado</h6>
+                    <p class="mb-2 small">
+                        <strong>${ativo.hemocentro}</strong>, em <strong>${ativo.data}</strong> às <strong>${ativo.horario}</strong>.
+                        Para agendar em outro lugar ou data, cancele-o primeiro no seu painel.
+                    </p>
+                    <a href="{% url 'doadores:painel' %}" class="btn btn-sm btn-outline-dark">Ir para o meu painel</a>
+                </div>
+            `;
+            return;
+        }
+
         const doador = data.doador;
         const hojeIso = new Date().toISOString().split('T')[0];
         const minData = (doador.proxima_data_apta && doador.proxima_data_apta > hojeIso) ? doador.proxima_data_apta : hojeIso;
@@ -436,6 +453,21 @@
                         <i class="bi bi-chat-left-text text-danger"></i> Observações adicionais (opcional)
                     </label>
                     <textarea name="observacoes" class="form-control" rows="2" placeholder="Ex: primeira doação, preferência de braço, etc."></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small text-muted text-uppercase mb-2">
+                        <i class="bi bi-clipboard2-pulse text-danger"></i> 3. Confira os requisitos para doar sangue
+                    </label>
+                    <div class="border rounded p-3 small bg-light" style="max-height: 220px; overflow-y: auto;">
+                        ${document.getElementById('requisitosConteudo').innerHTML}
+                    </div>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="aceiteRequisitosMapa" name="aceite_requisitos" required>
+                        <label class="form-check-label fw-semibold small" for="aceiteRequisitosMapa">
+                            Li os requisitos acima e declaro que atendo a eles.
+                        </label>
+                    </div>
                 </div>
 
                 <div id="alertaErroAgendamento" class="alert alert-danger d-none mb-3"></div>

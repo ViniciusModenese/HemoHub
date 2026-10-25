@@ -15,6 +15,8 @@ IDADE_LIMITE_PRIMEIRA_DOACAO = 60
 PESO_MINIMO_KG = 50
 DIAS_POS_PARTO_NORMAL = 90
 DIAS_POS_PARTO_CESAREA = 180
+REGULAR_MINIMO_DOACOES = 2
+REGULAR_JANELA_DIAS = 730
 
 
 class Doador(models.Model):
@@ -63,7 +65,7 @@ class Doador(models.Model):
 
     @property
     def idade(self):
-        hoje = timezone.now().date()
+        hoje = timezone.localdate()
         nascimento = self.data_nascimento
         return hoje.year - nascimento.year - ((hoje.month, hoje.day) < (nascimento.month, nascimento.day))
 
@@ -83,23 +85,47 @@ class Doador(models.Model):
         ultima = self.historico.order_by('-data_doacao').first()
         return ultima.data_doacao if ultima else None
 
+    def agendamento_ativo(self):
+        Agendamento.marcar_ausentes(doador=self)
+        return self.agendamentos.filter(
+            status=Agendamento.Status.CONFIRMADO,
+        ).select_related('hemocentro').first()
+
+    def doou_antes_dos_60_anos(self):
+        nascimento = self.data_nascimento
+        try:
+            sessenta_anos = nascimento.replace(year=nascimento.year + IDADE_LIMITE_PRIMEIRA_DOACAO)
+        except ValueError:
+            sessenta_anos = nascimento.replace(year=nascimento.year + IDADE_LIMITE_PRIMEIRA_DOACAO, month=3, day=1)
+        return self.historico.filter(data_doacao__lt=sessenta_anos).exists()
+
+    def e_doador_regular(self):
+        limite = timezone.localdate() - timedelta(days=REGULAR_JANELA_DIAS)
+        return self.historico.filter(data_doacao__gte=limite).count() >= REGULAR_MINIMO_DOACOES
+
     def doacoes_ultimos_12_meses(self):
-        limite = timezone.now().date() - timedelta(days=365)
+        limite = timezone.localdate() - timedelta(days=365)
         return self.historico.filter(data_doacao__gte=limite).count()
 
-    def apto_para_doar(self):
+    def apto_para_doar(self, considerar_idade=True):
         motivos = []
         idade = self.idade
         ultima_doacao = self.data_ultima_doacao()
 
-        if idade < IDADE_MINIMA:
-            motivos.append(f'Idade mínima para doação é {IDADE_MINIMA} anos.')
-        elif idade > IDADE_MAXIMA:
-            motivos.append(f'Idade máxima para doação é {IDADE_MAXIMA} anos.')
-        elif idade >= IDADE_LIMITE_PRIMEIRA_DOACAO and ultima_doacao is None:
-            motivos.append(
-                f'Após os {IDADE_LIMITE_PRIMEIRA_DOACAO} anos, só pode doar quem já doou antes dessa idade.'
-            )
+        if considerar_idade:
+            if idade < IDADE_MINIMA:
+                motivos.append(f'Idade mínima para doação é {IDADE_MINIMA} anos.')
+            elif idade > IDADE_MAXIMA:
+                if not self.e_doador_regular():
+                    motivos.append(
+                        f'Acima de {IDADE_MAXIMA} anos só podem doar doadores voluntários regulares '
+                        f'(ao menos {REGULAR_MINIMO_DOACOES} doações nos últimos 2 anos), '
+                        'após avaliação médica no serviço de hemoterapia.'
+                    )
+            elif idade >= IDADE_LIMITE_PRIMEIRA_DOACAO and not self.doou_antes_dos_60_anos():
+                motivos.append(
+                    f'Após os {IDADE_LIMITE_PRIMEIRA_DOACAO} anos, só pode doar quem já doou antes dessa idade.'
+                )
 
         if self.peso < PESO_MINIMO_KG:
             motivos.append(f'Peso mínimo para doação é {PESO_MINIMO_KG} kg.')
@@ -109,7 +135,7 @@ class Doador(models.Model):
 
         if self.data_ultimo_parto:
             limite_dias = DIAS_POS_PARTO_CESAREA if self.parto_cesarea else DIAS_POS_PARTO_NORMAL
-            dias_desde_parto = (timezone.now().date() - self.data_ultimo_parto).days
+            dias_desde_parto = (timezone.localdate() - self.data_ultimo_parto).days
             if dias_desde_parto < limite_dias:
                 motivos.append(
                     f'Após o parto é necessário aguardar {limite_dias} dias '
@@ -120,7 +146,7 @@ class Doador(models.Model):
         limite_anual = LIMITE_DOACOES_ANO[self.sexo]
 
         if ultima_doacao:
-            dias_desde_ultima = (timezone.now().date() - ultima_doacao).days
+            dias_desde_ultima = (timezone.localdate() - ultima_doacao).days
             if dias_desde_ultima < intervalo_dias:
                 motivos.append(
                     f'Intervalo mínimo entre doações é de {intervalo_dias} dias '
@@ -134,7 +160,7 @@ class Doador(models.Model):
 
     def proxima_data_apta(self):
         apto, motivos = self.apto_para_doar()
-        hoje = timezone.now().date()
+        hoje = timezone.localdate()
         if apto:
             return hoje
 
@@ -180,6 +206,7 @@ class Agendamento(models.Model):
         CONFIRMADO = 'confirmado', 'Confirmado'
         CONCLUIDO = 'concluido', 'Concluído'
         CANCELADO = 'cancelado', 'Cancelado'
+        AUSENTE = 'ausente', 'Ausente'
 
     doador = models.ForeignKey(Doador, on_delete=models.CASCADE, related_name='agendamentos')
     hemocentro = models.ForeignKey(Hemocentro, on_delete=models.CASCADE, related_name='agendamentos')
@@ -194,6 +221,19 @@ class Agendamento(models.Model):
         verbose_name = 'Agendamento de doação'
         verbose_name_plural = 'Agendamentos de doação'
         ordering = ['data', 'horario']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['doador'],
+                condition=models.Q(status='confirmado'),
+                name='um_agendamento_confirmado_por_doador',
+            ),
+        ]
+
+    @classmethod
+    def marcar_ausentes(cls, **filtros):
+        return cls.objects.filter(
+            status=cls.Status.CONFIRMADO, data__lt=timezone.localdate(), **filtros,
+        ).update(status=cls.Status.AUSENTE, atualizado_em=timezone.now())
 
     def __str__(self):
         return f'{self.doador.nome_completo} em {self.hemocentro.nome} ({self.data} às {self.horario})'

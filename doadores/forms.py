@@ -1,6 +1,7 @@
 from django import forms
 
 from hemocentros.models import Hemocentro
+from hemoconecta.utilitarios import normalizar_cpf
 
 from .models import Doador
 
@@ -47,8 +48,11 @@ class FormularioCadastroDoador(forms.Form):
         return email
 
     def clean_cpf(self):
-        cpf = self.cleaned_data['cpf']
-        if Doador.objects.filter(cpf=cpf).exists():
+        cpf = normalizar_cpf(self.cleaned_data['cpf'])
+        if cpf is None:
+            raise forms.ValidationError('CPF inválido. Confira os números digitados.')
+        so_digitos = ''.join(c for c in cpf if c.isdigit())
+        if Doador.objects.filter(cpf__in=[cpf, so_digitos]).exists():
             raise forms.ValidationError('Este CPF já está cadastrado.')
         return cpf
 

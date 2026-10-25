@@ -34,13 +34,22 @@ O **HemoHub** é uma ponte tecnológica direta entre o hemocentro e o doador vol
   - 🟠 **Âmbar:** Demanda alta
   - 🔴 **Vermelho Pulsante:** Demanda urgente ou crítica
 - **Matriz de Compatibilidade Sanguínea:** Ferramenta educativa e interativa que indica quem doa e quem recebe para cada tipo.
-- **Agendamento Inteligente:** Escolha de data e horário com validação automática de intervalos obrigatórios (60 dias para homens e 90 dias para mulheres).
-- **Painel Pessoal:** Acompanhamento de agendamentos, cancelamentos e histórico de doações.
+- **Agendamento Inteligente:** Tela própria que lista os hemocentros do mais próximo ao mais distante, com a situação de demanda de cada um, e também agendamento direto pelo mapa. As regras valem nos dois caminhos:
+  - Validação de aptidão (idade, peso, gestação, pós-parto) e dos intervalos obrigatórios (60 dias para homens e 90 dias para mulheres).
+  - Um agendamento confirmado por vez, e nenhum horário que já passou. Um agendamento confirmado cuja data passou sem comparecimento vira **Ausente** automaticamente e libera um novo agendamento.
+  - Aviso com os requisitos para doação, que precisa ser confirmado antes de agendar. As regras seguem o [Ministério da Saúde](https://www.gov.br/saude/pt-br/composicao/saes/doacao-de-sangue) e a Fundação Pró-Sangue ([requisitos](https://www.portal.prosangue.sp.gov.br/fps/doacao_de_sangue__/requisitos_para_doacao___) e [quem não pode doar](https://www.portal.prosangue.sp.gov.br/fps/doacao_de_sangue__/quem_nao_pode_doar__)).
+- **Painel Pessoal:** Acompanhamento de agendamentos, cancelamentos (apenas de agendamentos confirmados) e histórico de doações.
+- **Cadastro com validação:** CPF validado pelos dígitos verificadores.
 
 ### 🏥 Para o Hemocentro
-- **Painel de Gestão Hospitalar:** Monitoramento instantâneo do nível de estoque dos 8 tipos sanguíneos.
-- **Alertas de Emergência:** Disparo de notificações automáticas para doadores compatíveis em um raio de até 10 km.
-- **Agenda de Atendimento:** Lista diária de doadores agendados com confirmação de presença em 1 clique, integrando automaticamente com o histórico do doador.
+- **Painel de Gestão Hospitalar:** Monitoramento do estoque dos 8 tipos sanguíneos, com nível (crítico, baixo ou normal) e barra de progresso por tipo. Todos os tipos aparecem sempre (sem registro, contam como zero). O hemocentro informa o saldo pela própria tela, e cada doação concluída soma 1 bolsa ao tipo do doador automaticamente.
+- **Alerta por tipo crítico:** nos tipos com estoque crítico (abaixo de 10 bolsas), o painel mostra o botão **Emitir alerta**, que notifica os doadores compatíveis no raio de 30 km, e exibe a data do último alerta emitido.
+- **Alertas de Emergência:** Disparo de notificações automáticas para doadores compatíveis em um raio de até 30 km.
+- **Agenda de Atendimento:** Lista de doadores agendados, com filtro por status e período e confirmação de presença em 1 clique, integrando automaticamente com o histórico do doador. A confirmação só é liberada a partir da data do agendamento.
+- **Cadastro em Rede e Registro de Doação:** Os hemocentros compartilham o cadastro de doadores. A busca é por nome (mínimo 3 letras) ou CPF e mostra só nome, tipo sanguíneo e cidade. O registro valida a data e o intervalo considerando as doações feitas em **qualquer** hemocentro, e cancela agendamentos do doador em outros locais que ficariam dentro do intervalo. A confirmação ("Concluir" ou "Registrar doação") é bloqueada se o doador estiver inapto por peso, gestação, pós-parto, intervalo ou limite anual. A **idade fica a cargo da triagem** do hemocentro.
+- **Cadastro Presencial:** Para quem chega sem cadastro, o hemocentro cadastra o doador num modal na própria tela de registro. O doador já entra na agenda de hoje, pronto para a doação ser confirmada.
+- **Agenda Paginada:** A agenda lista os pendentes primeiro e identifica doadores acima de 70 anos, que passam por avaliação médica no local.
+- **Cadastro com validação:** CNPJ validado pelos dígitos verificadores (quando informado).
 
 ---
 
@@ -100,6 +109,7 @@ O projeto inclui comandos com dados de hemocentros reais do Estado de SP e gera�
 ```bash
 python manage.py popular_hemocentros
 python manage.py popular_doadores --quantidade 50
+python manage.py popular_estoque            # estoque aleatório do hemocentro de demonstração (colsan_jundiai); só roda com DEBUG ligado
 ```
 
 ### 7. Iniciar a Aplicação
@@ -113,20 +123,43 @@ Acesse no navegador: **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
 
 ## 🔑 Credenciais para Avaliação e Demonstração
 
+Os comandos `popular_doadores` e `popular_hemocentros` criam todos os usuários com a mesma senha: `HemoHub2026!`.
+
 | Perfil | Usuário | E-mail | Senha |
 |---|---|---|---|
-| **Doador** | doador1 | doador1@teste.com | teste123 |
-| **Hemocentro** | hemocentro1 | hemocentro1@teste.com | teste123 |
+| **Doador** | doador_0001 (até doador_0050) | doador_0001@doadores.hemohub.local | HemoHub2026! |
+| **Hemocentro** | banco_de_sangue_beneficencia_p | banco_de_sangue_beneficencia_p@hemocentros.hemohub.local | HemoHub2026! |
+| **Hemocentro** | colsan_jundiai | colsan_jundiai@hemocentros.hemohub.local | HemoHub2026! |
+
+No login, escolha a aba correspondente (**Sou Doador** ou **Sou Hemocentro**). Os demais hemocentros seguem o padrão `nome_da_unidade@hemocentros.hemohub.local`. Para listá-los, ou para acessar o `/admin/`, crie um administrador com `python manage.py createsuperuser`.
 
 ---
 
 ## 🧪 Testes Automatizados
 
-O sistema conta com 14 testes unitários automatizados cobrindo autenticação, restrição de acesso por perfil, regras de aptidão, agendamento e API do mapa:
+O sistema conta com 111 testes automatizados cobrindo autenticação, restrição de acesso por perfil, regras de aptidão (inclusive por faixa de idade), agendamento (aptidão, um por vez, horário passado, aceite dos requisitos, cancelamento), validação de CPF e CNPJ, agenda e filtros do hemocentro, registro de doação (com bloqueio por aptidão), validação de horário, cadastro presencial, paginação da agenda, estoque de sangue, alerta por tipo crítico e API do mapa:
 
 ```bash
 python manage.py test
 ```
+
+Para validar o sistema pela tela, siga o [Roteiro de Testes Manuais](ROTEIRO_TESTES.md), que cobre cadastros, agendamentos, cancelamentos, cadastro presencial, estoque e alertas.
+
+---
+
+## ⚠️ Limitações Conhecidas e Melhorias Futuras
+
+Este é um projeto acadêmico e algumas decisões foram deixadas de fora de propósito:
+
+- **Sem limite de vagas por horário:** vários doadores podem agendar o mesmo horário, como é comum nos hemocentros.
+- **Doador regular acima de 70 anos:** o sistema considera regular quem tem ao menos 2 doações registradas nos últimos 2 anos (critério adotado pelo projeto, já que as fontes oficiais não definem o número). Doações feitas fora do sistema só contam se o hemocentro as registrar. A avaliação médica é feita no local, e a agenda apenas sinaliza o doador. A idade vale para o agendamento feito pelo doador; na confirmação pelo hemocentro, ela é avaliada pela triagem.
+- **Cadastro de hemocentro sem aprovação:** não há verificação por um administrador, e o CNPJ é opcional.
+- **Configurações de desenvolvimento:** `SECRET_KEY` e `DEBUG` usam valores de desenvolvimento e devem ser trocados antes de qualquer publicação.
+- **E-mail de urgência:** exige configuração do `.env`. Sem ela, o envio falha, mas as notificações dentro do sistema continuam funcionando.
+- **Fuso horário único:** todo o sistema usa o horário de Brasília (`America/Sao_Paulo`). Hemocentros em estados com outro fuso (como Acre e Amazonas) teriam a checagem de "horário já passou" deslocada em 1 a 2 horas.
+- **Estoque com baixa manual:** as doações concluídas somam 1 bolsa automaticamente, mas a saída de bolsas (transfusões, descarte, validade) deve ser ajustada pelo hemocentro na tela de estoque. Os níveis (crítico abaixo de 10 bolsas, baixo abaixo de 25) são valores de referência fixos.
+- **Histórico de doações:** o hemocentro vê as doações concluídas na agenda, mas não há uma tela própria de histórico.
+- **Lista de impedimentos:** o aviso de requisitos resume as fontes oficiais. A avaliação final é sempre da triagem clínica do hemocentro.
 
 ---
 
@@ -136,7 +169,7 @@ python manage.py test
 HemoHub/
 ├── doadores/          # Perfil do doador, cálculo de aptidão e agendamentos
 ├── hemocentros/       # Cadastro hospitalar, unidades e dados semente de SP
-├── necessidades/      # Gestão de estoques sanguíneos e disparos de urgência
+├── necessidades/      # Necessidades de sangue e disparos de urgência
 ├── paginas/           # Página inicial institucional e API REST do mapa
 ├── usuarios/          # Autenticação unificada e controle de perfis
 ├── hemoconecta/       # Configurações centrais do Django (settings, urls)
@@ -147,6 +180,7 @@ HemoHub/
 ├── .gitignore         # Regras de exclusão do controle de versão
 ├── manage.py          # Utilitário de linha de comando Django
 ├── requirements.txt   # Dependências do projeto travadas
+├── ROTEIRO_TESTES.md  # Roteiro de testes manuais, cenário por cenário
 └── README.md          # Documentação do Projeto Integrador
 ```
 

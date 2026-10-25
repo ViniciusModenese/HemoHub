@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import FotoHemocentro, Hemocentro
+from .models import EstoqueSanguineo, FotoHemocentro, Hemocentro
 
 
 class FotoHemocentroInline(admin.TabularInline):
@@ -14,3 +14,9 @@ class HemocentroAdmin(admin.ModelAdmin):
     list_filter = ('estado', 'aprovado')
     search_fields = ('nome', 'cidade')
     inlines = [FotoHemocentroInline]
+
+
+@admin.register(EstoqueSanguineo)
+class EstoqueSanguineoAdmin(admin.ModelAdmin):
+    list_display = ('hemocentro', 'tipo_sanguineo', 'quantidade_bolsas', 'atualizado_em')
+    list_filter = ('tipo_sanguineo',)

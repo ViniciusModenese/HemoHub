@@ -1,5 +1,6 @@
 from pathlib import Path
 import os
+from django.contrib.messages import constants as messages
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -112,4 +113,8 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
-RAIO_NOTIFICACAO_URGENCIA_KM = 10
+RAIO_NOTIFICACAO_URGENCIA_KM = 30
+
+MESSAGE_TAGS = {
+    messages.ERROR: 'danger',
+}

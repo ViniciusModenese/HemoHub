@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% block titulo %}Agendar doação - HemoHub{% endblock %}
+
+{% block conteudo %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="titulo-com-icone">
+        <span class="icone-secao"><i class="bi bi-calendar2-heart"></i></span>
+        <h1 class="h4 mb-0">Agendar doação</h1>
+    </div>
+    <a href="{% url 'doadores:painel' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Voltar ao painel</a>
+</div>
+
+{% if apto %}
+<div class="alert alert-success d-flex align-items-center gap-2 py-2">
+    <i class="bi bi-check-circle-fill"></i>
+    <span>Você está apto a doar sangue hoje (tipo <strong>{{ doador.tipo_sanguineo }}</strong>). Escolha um hemocentro abaixo.</span>
+</div>
+{% else %}
+<div class="alert alert-warning py-2">
+    <p class="mb-1"><i class="bi bi-exclamation-triangle-fill"></i> <strong>Período de intervalo recomendado.</strong></p>
+    <ul class="small mb-1">
+        {% for motivo in motivos %}
+        <li>{{ motivo }}</li>
+        {% endfor %}
+    </ul>
+    <p class="small mb-0">Você pode agendar a partir de <strong>{{ proxima_data_apta|date:"d/m/Y" }}</strong>. O calendário já está ajustado para essa data.</p>
+</div>
+{% endif %}
+
+{% if agendamento_ativo %}
+<div class="alert alert-info py-2">
+    <i class="bi bi-info-circle-fill"></i> Você já tem um agendamento confirmado em <strong>{{ agendamento_ativo.hemocentro.nome }}</strong>
+    para <strong>{{ agendamento_ativo.data|date:"d/m/Y" }}</strong> às <strong>{{ agendamento_ativo.horario }}</strong>.
+    Para marcar em outro lugar ou data, cancele-o no <a href="{% url 'doadores:painel' %}">painel</a>.
+</div>
+{% endif %}
+
+<p class="text-muted small mb-3">
+    {% if tem_localizacao %}
+        Os hemocentros estão ordenados do mais próximo ao mais distante do seu endereço.
+    {% else %}
+        Não foi possível localizar o seu endereço, por isso a distância não aparece. Atualize o endereço em <a href="{% url 'doadores:editar' %}">Editar perfil</a>.
+    {% endif %}
+</p>
+
+{% for opcao in opcoes %}
+{% with hemocentro=opcao.hemocentro %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h2 class="h6 mb-1">{{ hemocentro.nome }}</h2>
+                <p class="small text-muted mb-1"><i class="bi bi-geo-alt text-danger"></i> {{ hemocentro.endereco_completo }}</p>
+                {% if opcao.distancia_km is not None %}
+                <p class="small text-muted mb-1"><i class="bi bi-signpost-split text-danger"></i> A {{ opcao.distancia_km|floatformat:1 }} km de você</p>
+                {% endif %}
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    {% if opcao.status_demanda == 'urgente' %}
+                        <span class="badge text-bg-danger">Urgência crítica</span>
+                    {% elif opcao.status_demanda == 'alta' %}
+                        <span class="badge text-bg-warning">Demanda alta</span>
+                    {% elif opcao.status_demanda == 'normal' %}
+                        <span class="badge text-bg-success">Demanda normal</span>
+                    {% endif %}
+                    {% if opcao.precisa_do_meu_tipo %}
+                        <span class="badge text-bg-light border"><i class="bi bi-droplet-fill text-danger"></i> Precisa do seu tipo</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'paginas:inicio' %}?hemocentro={{ hemocentro.id }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-map"></i> Ver no mapa</a>
+                <button class="btn btn-danger btn-sm" type="button" {% if agendamento_ativo %}disabled{% endif %} data-bs-toggle="collapse" data-bs-target="#agendar-{{ hemocentro.id }}" aria-expanded="false" aria-controls="agendar-{{ hemocentro.id }}">
+                    <i class="bi bi-calendar-check"></i> Agendar aqui
+                </button>
+            </div>
+        </div>
+
+        <div class="collapse mt-3" id="agendar-{{ hemocentro.id }}">
+            <hr>
+            <form method="post" class="form-agendamento" action="{% url 'doadores:criar_agendamento' hemocentro.id %}">
+                {% csrf_token %}
+                <p class="small text-muted mb-3"><i class="bi bi-clock"></i> Funcionamento: {{ hemocentro.horario_funcionamento|default:"Segunda a Sexta das 08h às 17h" }}</p>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted text-uppercase" for="data-{{ hemocentro.id }}">1. Dia</label>
+                        <input type="date" id="data-{{ hemocentro.id }}" name="data" class="form-control" value="{{ data_minima }}" min="{{ data_minima }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted text-uppercase" for="horario-{{ hemocentro.id }}">2. Horário</label>
+                        <select id="horario-{{ hemocentro.id }}" name="horario" class="form-select" required>
+                            {% for horario in horarios %}
+                            <option value="{{ horario }}" {% if horario == '09:00' %}selected{% endif %}>{{ horario }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted text-uppercase" for="obs-{{ hemocentro.id }}">Observações (opcional)</label>
+                        <input type="text" id="obs-{{ hemocentro.id }}" name="observacoes" class="form-control" placeholder="Ex: primeira doação">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-danger mt-3"><i class="bi bi-check2-circle"></i> Confirmar agendamento</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endwith %}
+{% empty %}
+<div class="alert alert-info">Nenhum hemocentro disponível no momento.</div>
+{% endfor %}
+
+<div class="modal fade" id="modalRequisitos" tabindex="-1" aria-labelledby="modalRequisitosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <div class="text-danger fw-semibold small"><i class="bi bi-clipboard2-pulse"></i> ANTES DE CONFIRMAR</div>
+                    <h2 class="modal-title h5 fw-bold" id="modalRequisitosLabel">Confira os requisitos para doar sangue</h2>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body small">
+                {% include 'doadores/_requisitos_doacao.html' %}
+
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="aceiteRequisitos">
+                    <label class="form-check-label fw-semibold" for="aceiteRequisitos">
+                        Li os requisitos acima e declaro que atendo a eles.
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Voltar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarRequisitos" disabled>
+                    <i class="bi bi-check2-circle"></i> Confirmar agendamento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const modalRequisitosEl = document.getElementById('modalRequisitos');
+    const modalRequisitos = new bootstrap.Modal(modalRequisitosEl);
+    const aceiteRequisitos = document.getElementById('aceiteRequisitos');
+    const btnConfirmarRequisitos = document.getElementById('btnConfirmarRequisitos');
+    let formularioPendente = null;
+
+    document.querySelectorAll('.form-agendamento').forEach(formulario => {
+        formulario.addEventListener('submit', evento => {
+            evento.preventDefault();
+            formularioPendente = formulario;
+            aceiteRequisitos.checked = false;
+            btnConfirmarRequisitos.disabled = true;
+            modalRequisitos.show();
+        });
+    });
+
+    aceiteRequisitos.addEventListener('change', () => {
+        btnConfirmarRequisitos.disabled = !aceiteRequisitos.checked;
+    });
+
+    btnConfirmarRequisitos.addEventListener('click', () => {
+        if (!formularioPendente) return;
+        btnConfirmarRequisitos.disabled = true;
+        const aceite = document.createElement('input');
+        aceite.type = 'hidden';
+        aceite.name = 'aceite_requisitos';
+        aceite.value = 'on';
+        formularioPendente.appendChild(aceite);
+        formularioPendente.submit();
+    });
+</script>
+{% endblock %}
